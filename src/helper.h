@@ -103,6 +103,7 @@ std::array<double, 3> get_xyz(int lattice_index, int max_size)
     return r;
 }
 
+
 // A few functions used for initializing in certain shapes
 bool sphere(int lattice_index, int max_size, double r)
 {
