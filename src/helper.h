@@ -7,6 +7,7 @@
 #include<vector>
 #include<cmath>
 #include<array>
+#include<fstream>
 
 template <typename T>
 void read_in_vec(std::vector<T>& vec, std::ifstream& in_stream)
@@ -141,13 +142,12 @@ bool cube(int lattice_index, int max_size, double r)
     {
         return true;
     }
-
     return false;
 }
 
 bool cubocto(int lattice_index, int max_size, double r)
 {
-    return (cube(lattice_index, max_size, r) * octo(lattice_index, max_size, r));
+    return (cube(lattice_index, max_size, r) * octo(lattice_index, max_size, 3 * r));
 }
 
 #endif /* helper_h */
