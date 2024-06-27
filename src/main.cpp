@@ -16,10 +16,10 @@ int main(int argc, char** argv)
     filebase << "test" << std::fixed << std::setprecision(2) << temperature << "_" << mu << "_" << radius;
     
     // Create an instance of the nanocrystal object
-    nanocrystal nc(cubocto, radius, temperature, mu, epsilon, k_D, max_size, filebase.str(), "../TestFiles/", trial_number);
+    nanocrystal nc(sphere, radius, temperature, mu, epsilon, k_D, max_size, filebase.str(), "../TestFiles/", trial_number);
     
     // Run a simulation
-    unsigned long long num_steps = 5e6;
+    unsigned long long num_steps = 100; //5e6;
     int config_records = 5e2;
     int data_records = 1e4;
     int seed = 101; // Obviously get this from an external source for general use

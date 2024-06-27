@@ -1,2 +1,6 @@
 *.txt
 *.xyz
+*.o
+main
+TestFiles/
+.vscode/
