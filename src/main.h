@@ -24,7 +24,7 @@ class nanocrystal
         // Subclass that describes a site on the lattice
         public:
             int lattice_index, vector_index; // position in the lattice vector and in the active sites vector
-            std::vector<int> poss_rate_indices; // vector storing inidces in active rates vector for processes ocurring at this site
+            std::vector<int> poss_rate_indices; // vector storing indices in active rates vector for processes ocurring at this site
             std::vector<int> neighbors;
             atom(int index_l, int index_v, nanocrystal&);
             atom();
@@ -32,14 +32,23 @@ class nanocrystal
     private:
         // Some private constants that determine structure of lattice (for more general applications these matrices should be read from input file)
         
+
+        // !!!! I think zlat = 4; zlat2 = 12. But the first neighbors are in the other lattice... 
         const int zlat = 12;
         const int zlat2 = 54;
+
+
+        // !!!! These need to be changed to the lattice vectors of a hexagonal lattice. But should there be 1 or 2 sets? 
+        // !!!! I think these are the primitive cell vectors
+        // !!!! Every unit cell is assumed to have 1 atom only. BUT for wurtzite cells, there are 4 atoms in each unit cell. 
+        // !!!! Even just for cations / anions (hcp lattice), there are 2 atoms in each primitive cell. I think I need to re-define these. 
         // Three vectors set geometry of FCC lattice
         const std::vector<double> xtl_1_xyz = {0, 1, 1}; // Distance is measured in units of sqrt(2) * radius of metal atom or 1/sqrt(2) * lattice constant
         const std::vector<double> xtl_2_xyz = {1, 0, 1};
         const std::vector<double> xtl_3_xyz = {1, 1, 0};
 
         // A matrix gives neighbors relative to a single site
+        // These are in terms of xtl_1/2/3_xyz??? 
         const std::vector<std::vector<int> > order = { {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1},
         
         {1, -1, 0}, {-1, 1, 0}, {0, 1, -1}, {0, -1, 1}, {-1, 0, 1}, {1, 0, -1} };
@@ -97,6 +106,7 @@ class nanocrystal
         std::uniform_real_distribution<double> contdis;
 
         // Containers for keeping track of currently active processes and associated rates
+        // All rates are stored as three elements, in the order of attachment, detachment, diffusion
         std::array<int, 3> poss_rates;
         std::array<std::vector<double>, 3> partial_sums;
         std::array<std::vector<int>, 3 >sums_order;
@@ -287,6 +297,8 @@ void nanocrystal::pre_compute_rates()
         poss_rates[i] = 0;
         pre_computed_rates[i].clear();
     }
+
+    // All possible rates: there are only zlat number of possible rates for attachment and detachment. Only 17 different diffusion rates. 
     for (int num_neighb = 0; num_neighb < zlat; num_neighb++)
     {
         pre_computed_rates[0].push_back( exp( (epsilon * num_neighb + mu) / (2 * T) ) );
@@ -307,6 +319,7 @@ void nanocrystal::configure_surface()
     pre_compute_rates();
     for (int i = 0; i < 3; i++)
     {
+        // !!!! I need to understand all these terms. They are used in Gillespie
         partial_sums[i].resize(poss_rates[i]);
         sums_order[i].resize(poss_rates[i]);
         rate_counts[i].resize(poss_rates[i]);
@@ -319,9 +332,10 @@ void nanocrystal::configure_surface()
         }
     }
 
-    active_sites.push_back(atom());
+    active_sites.push_back(atom());  // The 0-th active sites is an empty atom() as a place holder
     vector_indices.resize(N_tot);
 
+    // !!!! I don't understand this bit. All sites in the simulation box are being added to something? sites? neighbs? etc? What is stored in the vector of sites[i]? Occupied or not? 
     int lind = 0;
     for (int i = 0; i < max_size; i++ )
     {
@@ -336,6 +350,7 @@ void nanocrystal::configure_surface()
         }
     }
 
+    // If the site is not occupied and doesn't have all its neighbors, it's active. If a site is vacant and has neighbors, it's active. 
     for (int i = 0; i < N_tot; i++)
     {
         if ((sites[i] > 0 && neighbs[i] < zlat) || (sites[i] == 0 && neighbs[i] > 0 ))
@@ -345,8 +360,10 @@ void nanocrystal::configure_surface()
     }
 }
 
+// !!!! I don't understand this function.
 void nanocrystal::add_site_to_new_surface(int index, int val)
 {
+    // Not all sites are "active", as they might not be on the surface
     std::vector<int> current_neighbors = get_nearest_neighbors(index);
     int num_neighb = 0;
     for (int m = 0; m < zlat; m++)
@@ -419,6 +436,7 @@ int nanocrystal::add_rate(int rate_num, int vector_index, int rate_label, int ra
     return new_index;
 }
 
+// !!!! What is num_open_slots_active_sites? 
 void nanocrystal::add_active_site(int site_index)
 {
     int new_atom_index;
@@ -671,7 +689,7 @@ void nanocrystal::kmc_step()
         for (int q = 0; q < poss_rates[i]; q++)
         {
             new_rate = total_rate + rate_counts[i][q] * pre_computed_rates[i][q];
-            if (new_rate > total_rate)
+            if (new_rate > total_rate)    // Why is the total_rate only updated when it's larger? 
             {
                 total_rate = new_rate;
                 partial_sums[i][count[i]] = total_rate;

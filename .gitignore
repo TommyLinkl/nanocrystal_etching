@@ -4,3 +4,4 @@
 main
 TestFiles/
 .vscode/
+.DS_Store
